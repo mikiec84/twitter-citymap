@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <title>Twitter Citymap Search Report</title>
+    </head>
+
+    <body class="eduzen notes note">
+
+        <div class="header">
+
+            <h3 class="hello">
+                F&uuml;lle die Kiezatlas Twitter City Map mit neuen Tweets
+            </h3>
+
+            <a class="load-more" th:href="'/twitter/map/fetch/more/' + ${searchTopicId}"
+                th:text="Lade weitere Tweets"></a>
+            <a class="refresh-search" th:href="'/twitter/map/refresh/' + ${searchTopicId}">Lade neueste Tweets</a>
+
+        </div>
+
+    </body>
+
+</html>

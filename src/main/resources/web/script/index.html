@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Kiezatlas Twitter Citymap</title>
+
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0"/>
+    <meta name="apple-mobile-web-app-capable" content="no" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta property="og:type" content="website"/>
+    <meta property="og:title" content="Mach mit beim Fotowettbewerb des Kinder- und Jugendparlaments
+          Berlin Charlottenburg-Wilmersdorf"/>
+    <meta property="og:image" content="http://fotowettbewerb.kiezatlas.de/"/>
+    <meta property="og:url" content="http://fotowettbewerb.kiezatlas.de/"/>
+    <meta property="og:site_name" content="Fotowettbewerb vom Kinder- und Jugendparlament Berlin Charlottenburg-Wilmersdorf"/>
+    <meta property="og:description" content="Schießt ein Foto von eurem Lieblingsplatz in Charlottenburg und Wilmersdorf
+          und sendet diese ein zum Fotowettbewerb des Kinder- und Jugendparlament."/>
+
+    <link rel="stylesheet"  href="/de.kiezatlas.twitter-citymap/css/jquery.mobile.theme-1.3.0.min.css">
+    <link rel="stylesheet"  href="/de.kiezatlas.twitter-citymap/css/jquery.mobile-1.3.0.min.css">
+    <link rel="stylesheet" href="/de.kiezatlas.twitter-citymap/script/leaflet/dist/leaflet.css"/>
+    <link rel="stylesheet" href="/de.kiezatlas.twitter-citymap/css/sitestyle.css"/>
+
+    <script src="/de.deepamehta.webclient/script/util/js_utils.js"></script>
+    <script src="/de.kiezatlas.twitter-citymap/script/ka-2.0-SNAPSHOT.js"></script>
+    <script src="/de.kiezatlas.twitter-citymap/script/jquery-1.9.1.min.js"></script>
+    <script type="text/javascript">
+            $(document).bind("mobileinit", function() { $.mobile.ajaxEnabled = false })
+    </script>
+    <script src="/de.kiezatlas.twitter-citymap/script/leaflet/dist/leaflet.js"></script>
+    <script src="/de.kiezatlas.twitter-citymap/script/jquery.mobile-1.3.0.min.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function(e) {
+
+            $.mobile.transitionFallbacks.slideout = "none"
+            //
+            // Fotowettbewerb Geomap ID
+            kiezatlas.city_map_id = 3423 // 2911
+            // Facets to show on our site
+            // kiezatlas.object_facet_uri = "domain.project.topic_type_3044" // domain.project.topic_type_3643
+            //
+            js.set_cookie("dm4_topicmap_id", kiezatlas.city_map_id)
+
+            /** This is basically our primitive routing implementation of the webapp **/
+            $(document).on("pagechange", function(event, data) {
+
+                var toPage = ""
+                var fromPage = ""
+                toPage = data.toPage[0].id
+
+                if (data.options.fromPage != undefined) {
+
+                    fromPage = data.options.fromPage[0].id
+                }
+
+                if (toPage.indexOf("citymaps-page") != -1) {
+
+                    // kiezatlas.setServiceUrl("http://www.kiezatlas.de/rpc/");
+                    // kiezatlas.setIconsFolder("http://www.kiezatlas.de/client/icons/");
+                    // kiezatlas.setImagesFolder("http://www.kiezatlas.de/client/images/");
+
+                    if (fromPage.indexOf("info") != -1) {
+
+                        // do nothing, in particular do not initialize our citymap again
+                        kiezatlas.render_leaflet_container(false)
+
+                    } else if (fromPage.indexOf("citymaps-page") == -1) {
+
+                        kiezatlas.render_mobile_city_map_view()
+                    } else {
+
+                        kiezatlas.render_mobile_city_map_view()
+                    }
+
+                } else if (toPage.indexOf("info") != -1) {
+
+                    // console.log("going to detail view...")
+                }
+            })
+
+            /** Handling application initialization by deep-linking **/
+            if (window.location.href.indexOf("#citymaps-page") == -1 &&
+                window.location.href.indexOf("#infoo") == -1) {
+                // this is just here because initially, no "pagechange" is fired by jqm
+                // kiezatlas.loadPublishedMobileCityMaps()
+                // kiezatlas.renderMobileCityMapList(kiezatlas.publishedMaps)
+                kiezatlas.render_mobile_city_map_view()
+            }
+
+        });
+    </script>
+</head>
+<body>
+
+    <div id="citymaps-page" data-role="page">
+
+        <div data-role="header" data-theme="b">
+            <!--a target="_blank" href="http://m.kiezatlas.de/ehrenamt" data-icon="home">&nbsp;</a-->
+            <!-- a class="back" href="#citymaps-list" data-transition="flow" data-icon="back">&nbsp;</a-->
+            <h1 class="my-title">Lade Stadtplanansicht..</h1>
+            <!-- a href="#" data-icon="bars">&nbsp;</a-->
+            <a class="back" style="display: none;" href="#infoo" data-transition="slidefade"></a>
+        </div>
+
+        <div id="message" class="notification">Testnachricht..</div>
+
+        <div id="map" class="fullsize"></div>
+
+        <!--div id="details" data-role="panel" data-position="right">
+            <a href="#my-header" data-rel="close">Close panel</a>
+        </div-->
+
+    </div>
+
+    <div id="infoo" data-role="page">
+
+        <div data-role="header" data-theme="b">
+            <!--a target="_blank" href="http://m.kiezatlas.de/ehrenamt" data-icon="home">&nbsp;</a-->
+            <a class="back" href="#citymaps-page" data-transition="flow" data-direction="reverse" data-icon="back">
+                Zur&uuml;ck
+            </a>
+            <h1 class="my-title">Detailansicht</h1>
+            <!-- a href="#" data-icon="bars">&nbsp;</a-->
+            <div id="message-info" class="notification">Testnachricht..</div>
+        </div>
+
+        <div id="infoo-area" data-role="content">
+            <p>
+                Bitte gehen Sie &uuml;ber den <a href="/">Stadtplan</a> zu den jew. Detailinfos.
+                Unsere Anwendung unterst&uuml;tzt aktuell noch nicht das sog. "Deep-Linking" (direktes ansteuern)
+                von einzelnen Datens&auml;tzen in einzelnen Stadtpl&auml;nen.<br/><br/>
+                Bitte entschuldigen Sie die Umst&auml;nde. <br/><br/> Ihr KiezAtlas-Team
+            </p>
+        </div>
+
+    </div>
+
+</body>
+</html>
+
