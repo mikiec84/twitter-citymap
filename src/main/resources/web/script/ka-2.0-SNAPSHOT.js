@@ -56,9 +56,13 @@ var kiezatlas = new function() {
         kiezatlas.setup_leaflet_markers(true) // all L.LatLng()s are constructed here
         kiezatlas.render_leaflet_container(true)
         // set tmp page title
-        kiezatlas.render_mobile_info_title("Kiezatlas Twitter Citymap");
+        kiezatlas.render_mobile_info_title("#kiezatlas-Stadtplan");
         // ask for users location
         // kiezatlas.ask_users_location()
+        jQuery('#present').click(function(e) {
+            console.log("Clicked birthday card ..")
+            jQuery('#present').remove()
+        })
     }
 
     this.render_leaflet_container = function (reset) {
@@ -155,28 +159,25 @@ var kiezatlas = new function() {
         if (object.composite.hasOwnProperty(kiezatlas.object_facet_uri)) {
             description = object.composite[kiezatlas.object_facet_uri].value
         }
-        var likes = 0
-        if (object.composite.hasOwnProperty("org.deepamehta.reviews.good")) {
-            likes = object.composite["org.deepamehta.reviews.good"].value
+        var user = ""
+        if (object.composite.hasOwnProperty("org.deepamehta.twitter.user")) {
+            var entity = object.composite["org.deepamehta.twitter.user"]
+            var username = entity.composite["org.deepamehta.twitter.user_name"].value
+            var avatar_url = entity.composite["org.deepamehta.twitter.user_image_url"].value
+            user = '<img src="'+avatar_url+'"><br/>'
+            user += '<b>' + username + '</b>'
         }
-        var dislikes = 0
-        if (object.composite.hasOwnProperty("org.deepamehta.reviews.soso")) {
-            dislikes = object.composite["org.deepamehta.reviews.soso"].value
+        // var references = ""
+        if (object.composite.hasOwnProperty("org.deepamehta.twitter.tweet_entities")) {
+            var items = JSON.parse(object.composite["org.deepamehta.twitter.tweet_entities"].value)
+            // console.log(items)
         }
-        var infoItem = '<div id="info-item">'+ address + '<br/>' + description + '<p class="like-numbers">'
-            + '<span class="likes">' +likes+ ' Stimmen</span>'
-            + '<span class="dislikes">' +dislikes+ ' Stimmen</span>'
-            + '</p>';
-            infoItem += '<p class="like-buttons"></p></div>';
+        var infoItem = '<div id="info-item">'+ user + '<br/><br/>' + description + '</div>';
         //
         jQuery("#infoo-area .content-body").html(infoHeader);
         jQuery("#infoo-area .content-body").append(infoItem);
         // add voting-interaction
-        var $like = $('<a id="like-'+object.id+'" href="#good" class="button">Gef&auml;llt mir gut</a>');
-            $like.click(kiezatlas.add_review_good)
-        var $dislike = $('<a id="dislike-'+object.id+'" href="#soso" class="button">Naja, geht so</a>');
-            $dislike.click(kiezatlas.add_review_soso)
-        jQuery("#infoo-area .content-body .like-buttons").append($like).append($dislike);
+        // jQuery("#infoo-area .content-body .like-buttons").append($like).append($dislike);
 
     }
 
@@ -204,56 +205,58 @@ var kiezatlas = new function() {
                 var topicId = topic.id;
                 var marker = undefined;
                 var latlng = undefined;
-                var lng = full_topic.composite['dm4.geomaps.geo_coordinate'].composite['dm4.geomaps.longitude'].value;
-                var lat = full_topic.composite['dm4.geomaps.geo_coordinate'].composite['dm4.geomaps.latitude'].value;
-                // sanity check..
-                var skip = false;
-                if (lat == 0.0 || lng == 0.0) {
-                    skip = true;
-                } else if (lng < -180.0 || lng > 180.0) {
-                    skip = true;
-                } else if (lat < -90.0 || lat > 90.0) {
-                    skip = true;
-                } else if (isNaN(lat) || isNaN(lng)) {
-                    skip = true;
-                }
-                if (!skip) {
-                    latlng = new L.LatLng(parseFloat(lat), parseFloat(lng));
-                }
-                //
-                if (latlng != undefined) {
-                    var existingMarker = kiezatlas.get_marker_by_lat_lng(latlng);
-                    if (existingMarker != null) {
-                        marker = existingMarker;
-                        // add our current, proprietary topicId to the marker-object
-                        marker.options.topicId.push(topicId);
-                        var previousContent = marker._popup._content;
-                        marker.bindPopup(kiezatlas.render_object_title(full_topic) + previousContent);
-                    } else {
-                        marker = new L.Marker(latlng, {'clickable': true , 'topicId': [topicId]}); // icon: myIcon
-                        marker.bindPopup(kiezatlas.render_object_title(full_topic));
+                if (typeof full_topic !== "undefined") {
+                    var coordinate = full_topic.composite['dm4.geomaps.geo_coordinate']
+                    var lng = coordinate.composite['dm4.geomaps.longitude'].value;
+                    var lat = coordinate.composite['dm4.geomaps.latitude'].value;
+                    // sanity check..
+                    var skip = false;
+                    if (lat == 0.0 || lng == 0.0) {
+                        skip = true;
+                    } else if (lng < -180.0 || lng > 180.0) {
+                        skip = true;
+                    } else if (lat < -90.0 || lat > 90.0) {
+                        skip = true;
+                    } else if (isNaN(lat) || isNaN(lng)) {
+                        skip = true;
                     }
-                    // add marker to map object
-                    kiezatlas.map.addLayer(marker);
-                    // reference each marker in kiezatlas.markers model
-                    kiezatlas.markers.push(marker);
+                    if (!skip) {
+                        latlng = new L.LatLng(parseFloat(lat), parseFloat(lng));
+                    }
                     //
-                    marker.on('click', function (e) {
+                    if (latlng != undefined) {
+                        var existingMarker = kiezatlas.get_marker_by_lat_lng(latlng);
+                        if (existingMarker != null) {
+                            marker = existingMarker;
+                            // add our current, proprietary topicId to the marker-object
+                            marker.options.topicId.push(topicId);
+                            var previousContent = marker._popup._content;
+                            marker.bindPopup(kiezatlas.render_object_title(full_topic) + previousContent);
+                        } else {
+                            marker = new L.Marker(latlng, {'clickable': true , 'topicId': [topicId]}); // icon: myIcon
+                            marker.bindPopup(kiezatlas.render_object_title(full_topic));
+                        }
+                        // add marker to map object
+                        kiezatlas.map.addLayer(marker);
+                        // reference each marker in kiezatlas.markers model
+                        kiezatlas.markers.push(marker);
                         //
-                        this._popup.options.autoPan = true;
-                        this._popup.options.maxWidth = 160;
-                        this._popup.options.closeButton = true;
-                        this.openPopup();
-                        //
-                        // bubbles click handler consumed by on_bubble_click
-                        // jQuery(".leaflet-popup-content-wrapper").click(kiezatlas.on_bubble_click);
-                    }, marker);
+                        marker.on('click', function (e) {
+                            //
+                            this._popup.options.autoPan = true;
+                            this._popup.options.maxWidth = 160;
+                            this._popup.options.closeButton = true;
+                            this.openPopup();
+                            //
+                            // bubbles click handler consumed by on_bubble_click
+                            // jQuery(".leaflet-popup-content-wrapper").click(kiezatlas.on_bubble_click);
+                        }, marker);
+                    }
                 }
-
             }
         }
-        console.log("map.setup => " + kiezatlas.markers.length + " leaflets for "
-           + kiezatlas.mapTopics.topics.length + " loaded topics");
+        // console.log("map.setup => " + kiezatlas.markers.length + " leaflets for "
+           // + kiezatlas.mapTopics.topics.length + " loaded topics");
         if (isMobile) $.mobile.loader("hide")
     }
 
@@ -471,7 +474,6 @@ var kiezatlas = new function() {
             }
             if (!skip) {
                 var point = new L.LatLng(parseFloat(lat), parseFloat(lng));
-                console.log(point)
                 bounds.extend(point);
             }
         }

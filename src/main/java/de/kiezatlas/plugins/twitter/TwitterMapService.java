@@ -40,7 +40,7 @@ import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
-@Path("/twitter/map")
+@Path("/")
 @Produces(MediaType.TEXT_HTML)
 public class TwitterMapService extends WebActivatorPlugin {
 
@@ -100,7 +100,7 @@ public class TwitterMapService extends WebActivatorPlugin {
         }
     }
 
-    @Path("/search/create/{term}")
+    @Path("/twitter/map/search/create/{term}")
     @Produces(MediaType.TEXT_HTML)
     public Viewable fetchGeoTweets(@PathParam("term") String term) {
 
@@ -118,7 +118,7 @@ public class TwitterMapService extends WebActivatorPlugin {
 
     }
 
-    @Path("/fetch/more/{searchTopicId}")
+    @Path("/twitter/map/fetch/more/{searchTopicId}")
     @Produces(MediaType.TEXT_HTML)
     public Viewable fetchMoreGeoTweets(@PathParam("searchTopicId") long searchId) {
 
@@ -134,7 +134,7 @@ public class TwitterMapService extends WebActivatorPlugin {
 
     }
 
-    @Path("/fetch/latest/{searchTopicId}")
+    @Path("/twitter/map/fetch/latest/{searchTopicId}")
     @Produces(MediaType.TEXT_HTML)
     public Viewable fetchLatestGeoTweets(@PathParam("searchTopicId") long searchId) {
 
