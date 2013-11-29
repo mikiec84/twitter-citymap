@@ -42,7 +42,7 @@ import org.codehaus.jettison.json.JSONObject;
 
 @Path("/")
 @Produces(MediaType.TEXT_HTML)
-public class TwitterMapService extends WebActivatorPlugin {
+public class TwitterMapService extends PluginActivator implements AllPluginsActiveListener {
 
     private static Logger log = Logger.getLogger(TwitterMapService.class.getName());
 
@@ -69,11 +69,20 @@ public class TwitterMapService extends WebActivatorPlugin {
     private final String GEO_LONGITUDE_TYPE_URI = "dm4.geomaps.longitude";
     private final String GEO_LATITUDE_TYPE_URI = "dm4.geomaps.latitude";
 
+    private TwitterWorker twitterWorker = null;
+    private final long TWITTER_SEARCH_TOPIC_ID = 4814;
+    private final int QUERY_INTERVALL = 150000;
+
 
 
     @Override
     public void init() {
-        initTemplateEngine();
+        // initTemplateEngine();
+    }
+
+    @Override
+    public void allPluginsActive() {
+        log.info("Twitter Map Service ACKs ALL_PLUGINS_ACTIVE ");
     }
 
     @Override
@@ -82,9 +91,6 @@ public class TwitterMapService extends WebActivatorPlugin {
         if (topicmapService != null) {
             Topic topicmap = dms.getTopic("uri", new SimpleValue(TWITTER_TOPICMAP_URI), false);
             if (topicmap == null) {
-                /** // 1) create geomap
-                Topic geomap = topicmapService.createTopicmap(GEOMAP_NAME, TWITTER_TOPICMAP_URI,
-                        "dm4.geomaps.geomap_renderer", null); **/
                 // 1) create topicmap
                 Topic twittermap = topicmapService.createTopicmap(TWITTERMAP_NAME, TWITTER_TOPICMAP_URI,
                         "dm4.webclient.default_topicmap_renderer", null);
@@ -100,43 +106,41 @@ public class TwitterMapService extends WebActivatorPlugin {
         }
     }
 
-    @Path("/twitter/map/search/create/{term}")
-    @Produces(MediaType.TEXT_HTML)
-    public Viewable fetchGeoTweets(@PathParam("term") String term) {
-
-        Topic searchTopic = null;
-        if (twitterService != null) {
-            searchTopic = dms.createTopic(new TopicModel("org.deepamehta.twitter.search"), null);
-            searchTopic = twitterService.searchPublicTweets(searchTopic.getId(), term, "recent", "", "", null);
-            processTweetSearch(searchTopic);
-        } else {
-            throw new WebApplicationException(new Throwable("TwitterResearch Service unavailable"), 500);
-        }
-        viewData("term", term);
-        viewData("searchTopicId", searchTopic.getId());
-        return view("search-report");
-
+    @GET
+    @Path("/twitter/map/initialize/{id}")
+    @Produces(MediaType.TEXT_PLAIN)
+    public String startThread(@PathParam("id") long searchTopicId) {
+        startSearchPollingThread(searchTopicId);
+        return "Started.";
     }
 
+    @GET
     @Path("/twitter/map/fetch/more/{searchTopicId}")
     @Produces(MediaType.TEXT_HTML)
-    public Viewable fetchMoreGeoTweets(@PathParam("searchTopicId") long searchId) {
+    public String fetchMoreGeoTweets(@PathParam("searchTopicId") long searchId) {
 
         Topic searchTopic = dms.getTopic(searchId, true);
+        String name = searchTopic.getSimpleValue().toString();
         if (twitterService != null) {
-            searchTopic = twitterService.searchMoreTweets(searchTopic.getId(), true,  null);
-            processTweetSearch(searchTopic);
+            try {
+                searchTopic = twitterService.searchMoreTweets(searchTopic.getId(), true,  null);
+                processTweetSearch(searchTopic);
+            } catch (Exception e) {
+                if (e.getMessage().indexOf("204") != -1) name = "WARNING: There is no next page.";
+            }
         } else {
             throw new WebApplicationException(new Throwable("TwitterResearch Service unavailable"), 500);
         }
-        viewData("searchTopicId", searchTopic.getId());
-        return view("search-report");
-
+        // viewData("term", name);
+        // viewData("searchTopicId", searchTopic.getId());
+        // return view("search-report");
+        return "Fetched more.";
     }
 
+    @GET
     @Path("/twitter/map/fetch/latest/{searchTopicId}")
     @Produces(MediaType.TEXT_HTML)
-    public Viewable fetchLatestGeoTweets(@PathParam("searchTopicId") long searchId) {
+    public String fetchLatestGeoTweets(@PathParam("searchTopicId") long searchId) {
 
         Topic searchTopic = dms.getTopic(searchId, true);
         if (twitterService != null) {
@@ -145,15 +149,10 @@ public class TwitterMapService extends WebActivatorPlugin {
         } else {
             throw new WebApplicationException(new Throwable("TwitterResearch Service unavailable"), 500);
         }
-        viewData("searchTopicId", searchTopic.getId());
-        return view("search-report");
-
-    }
-
-    @Path("/test")
-    @Produces(MediaType.TEXT_HTML)
-    public Viewable test() {
-        return view("search-report");
+        // viewData("term", searchTopic.getSimpleValue());
+        // viewData("searchTopicId", searchTopic.getId());
+        // return view("search-report");
+        return "Fetched latest.";
     }
 
     @GET
@@ -259,6 +258,7 @@ public class TwitterMapService extends WebActivatorPlugin {
             geomapsService = null;
         } else if (service == twitterService) {
             twitterService = null;
+            stopSearchPollingThread();
         } else if (service instanceof AccessControlService) {
             aclService = null;
         } else if (service instanceof TopicmapsService) {
@@ -268,5 +268,22 @@ public class TwitterMapService extends WebActivatorPlugin {
         }
     }
 
+    public void stop() {
+        stopSearchPollingThread();
+    }
+
+    private void stopSearchPollingThread() {
+        twitterWorker.setThreadDead();
+        twitterWorker = null;
+        log.warning("Stopping Plugin / Service Gone -- TwitterWorker-Thread is destroyed --");
+    }
+
+    private void startSearchPollingThread(long searchTopicId) {
+        if (twitterWorker == null) {
+            twitterWorker = new TwitterWorker(this, searchTopicId, QUERY_INTERVALL);
+            twitterWorker.setDaemon(true);
+            twitterWorker.start();
+        }
+    }
 
 }

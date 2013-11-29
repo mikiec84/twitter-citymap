@@ -60,7 +60,6 @@ var kiezatlas = new function() {
         // ask for users location
         // kiezatlas.ask_users_location()
         jQuery('#present').click(function(e) {
-            console.log("Clicked birthday card ..")
             jQuery('#present').remove()
         })
     }
@@ -170,7 +169,21 @@ var kiezatlas = new function() {
         // var references = ""
         if (object.composite.hasOwnProperty("org.deepamehta.twitter.tweet_entities")) {
             var items = JSON.parse(object.composite["org.deepamehta.twitter.tweet_entities"].value)
-            // console.log(items)
+            // media check
+            if (items.hasOwnProperty('media')) {
+                var media_item_one = items['media'][0]
+                var media_url = media_item_one[0]["media_url"]
+                var media_html = '<br/><img src="'+media_url+'" title="Twitter Media Item><br/>'
+                description += media_html
+            }
+            // url check
+            if (items.hasOwnProperty('urls') && items['urls'].length > 0) {
+                var url_item_one = items['urls'][0]
+                var label = url_item_one['display_url']
+                var href = url_item_one['expanded_url']
+                var url_html = '<a href="'+href+'" target="_blank" title="Link opens new browser window">'+label+'</a>'
+                description += url_html
+            }
         }
         var infoItem = '<div id="info-item">'+ user + '<br/><br/>' + description + '</div>';
         //
