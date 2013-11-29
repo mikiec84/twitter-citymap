@@ -373,6 +373,7 @@ ul.ka-select li {
     box-shadow: 0 0 5px #888;
     border-top: 1px solid #fff;
     border-bottom: 1px solid #fff;
+    z-index: 200
 }
 
 #horizontal {
@@ -388,6 +389,7 @@ ul.ka-select li {
     box-shadow: 0 0 5px #888;
     border-left: 1px solid #fff;
     border-right: 1px solid #fff;
+    z-index: 201;
 }
 
 #card {
@@ -402,6 +404,7 @@ ul.ka-select li {
     padding: 20px;
     text-shadow: none !important;
     overflow: auto;
+    z-index: 202;
 }
 
 #card .ui-body-c {

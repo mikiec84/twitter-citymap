@@ -144,7 +144,7 @@ var kiezatlas = new function() {
 
     this.render_mobile_info_title = function(newTitle) {
         $(".my-title").html(newTitle)
-        window.document.title = newTitle + " 1.0"
+        window.document.title = newTitle
     }
 
     this.render_mobile_info_body = function (object) {
